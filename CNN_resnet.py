@@ -9,7 +9,7 @@ from tqdm import tqdm
 from torchmetrics import Accuracy, Precision, Recall 
 import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix
-
+import random
 # --- CONFIGURATION ---
 NUM_CLASSES = 10 
 BATCH_SIZE = 60
