@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import os
 import random
 import numpy as np
+import random
 # Importa le classi/funzioni dai file creati
 from MultiStreamResNet import MultiStreamResNet # Importa dal file 3
 from MultiModalDataset import get_dataloaders # Importa dal file 2
@@ -186,4 +187,5 @@ if __name__ == '__main__':
     # Implementa la chiamata alla funzione test_model(model, test_loader, DEVICE, class_names) qui.
     model.load_state_dict(torch.load(MODEL_SAVE_PATH, map_location=DEVICE))
     test_model(model, test_loader, DEVICE, class_names)
+
     print("\nTraining completato. Eseguire la valutazione finale...")
