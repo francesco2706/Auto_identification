@@ -10,7 +10,7 @@ from torchmetrics import Accuracy, Precision, Recall
 import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix
 import random
-# --- CONFIGURATION ---
+
 NUM_CLASSES = 10 
 BATCH_SIZE = 60
 LEARNING_RATE = 0.001
@@ -20,7 +20,7 @@ VAL_SPLIT_RATIO = 0.20
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {DEVICE}")
-# --- RANDOM MANAGEMENT ---
+
 def set_seed(seed): 
     random.seed(seed)
     np.random.seed(seed)
@@ -30,24 +30,20 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-# --- PATHS ---
 train_data_dir = r'C:\Users\giann\Desktop\universita\magistrale\FUNDATIONS OF DATA SCIENCE\progetto finale\Data\Dataset_Spectrogram\train'
 test_data_dir = r'C:\Users\giann\Desktop\universita\magistrale\FUNDATIONS OF DATA SCIENCE\progetto finale\Data\Dataset_Spectrogram\test'
 
 
-# --- DATA TRANSFORMS ---
 data_transforms = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor(), 
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# --- MODELLO CNN SETUP ---
-class EfficientSpectrogramCNN(nn.Module):
+class SpectrogramCNN(nn.Module):
     def __init__(self, in_channels, num_classes):
-        super(EfficientSpectrogramCNN, self).__init__()
+        super(SpectrogramCNN, self).__init__()
 
-        # Blocco 1: 128x128 -> 64x64
         self.block1 = nn.Sequential(
             nn.Conv2d(in_channels, 16, kernel_size=3, padding=1),
             nn.BatchNorm2d(16),
@@ -55,16 +51,13 @@ class EfficientSpectrogramCNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2) 
         )
         
-        # Blocco 2: 64x64 -> 32x32
         self.block2 = nn.Sequential(
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
-        
-        # Calcolo dimensione per il livello lineare
-        # Input: 32 canali * 32 larghezza * 32 altezza
+
         self.fc_input_size = 32 * 32 * 32 
         
         self.flatten = nn.Flatten()
@@ -83,7 +76,6 @@ class EfficientSpectrogramCNN(nn.Module):
         x = self.classifier(x) 
         return x
 
-# --- VALIDATION FUNCTION ---
 def validate_epoch(model, dataloader, device):
     model.eval()
     acc_metric = Accuracy(task="multiclass", num_classes=NUM_CLASSES).to(device)
@@ -95,7 +87,6 @@ def validate_epoch(model, dataloader, device):
             acc_metric.update(preds, targets)
     return acc_metric.compute().item()
 
-# --- TEST FUNCTION ---
 def test_model(model, dataloader, device, class_names):
     acc = Accuracy(task="multiclass", num_classes=NUM_CLASSES).to(device)
     precision = Precision(task="multiclass", num_classes=NUM_CLASSES, average='macro').to(device)
@@ -130,14 +121,8 @@ def test_model(model, dataloader, device, class_names):
     
     return acc.compute()
 
-
-# ====================================================================
-# --- MAIN EXECUTION LOOP ---
-# ====================================================================
-
 if __name__ == '__main__':
     set_seed(42)
-    # 1. LOAD DATA
     full_train_dataset = datasets.ImageFolder(root=train_data_dir, transform=data_transforms)
     test_dataset = datasets.ImageFolder(root=test_data_dir, transform=data_transforms)
     
@@ -153,13 +138,11 @@ if __name__ == '__main__':
     class_names = full_train_dataset.classes
     print(f"Dataset Training: {len(train_dataset)} | Validation: {len(validation_dataset)} | Test: {len(test_dataset)}")
 
-    # 2. INITIALIZATION
-    model = EfficientSpectrogramCNN(in_channels=3, num_classes=NUM_CLASSES).to(DEVICE)
+    model = SpectrogramCNN(in_channels=3, num_classes=NUM_CLASSES).to(DEVICE)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     best_val_acc = 0.0
 
-    # 3. TRAINING LOOP
     print("\n--- INIZIO TRAINING EFFICIENTE ---")
     
     for epoch in range(NUM_EPOCHS):
@@ -186,5 +169,4 @@ if __name__ == '__main__':
         print(f"Loss: {total_train_loss:.4f} | Val Acc: {val_acc:.4f}")
         
        
-    # 4. FINAL EVALUATION
     test_model(model, test_loader, DEVICE, class_names)
